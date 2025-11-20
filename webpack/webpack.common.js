@@ -124,6 +124,7 @@ const config = {
           {
             loader: "sass-loader",
             options: {
+              implementation: require("sass"),
               includePaths: [path.resolve(SRC_PATH, "styles")],
               sourceMap: true
             }
