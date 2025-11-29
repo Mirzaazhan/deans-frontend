@@ -1,5 +1,6 @@
 import * as actionTypes from "./actionTypes";
 import { combineReducers } from "redux";
+import config from "../config";
 
 const initialState = {
   staff: {
@@ -67,7 +68,11 @@ const staff = (state = initialState.staff, action) => {
         flag: false // reset flag
       };
     case actionTypes.USER_LOGIN_SUCCESS:
-      localStorage.setItem("token", payload.key); // set token
+      try {
+        localStorage.setItem(config.STORAGE_KEYS.TOKEN, payload.key); // set token
+      } catch (e) {
+        // ignore localStorage errors (SSR / tests)
+      }
       return {
         ...state,
         flag: true
@@ -83,7 +88,11 @@ const staff = (state = initialState.staff, action) => {
         flag: false // reset flag
       };
     case actionTypes.USER_LOGOUT_SUCCESS:
-      localStorage.removeItem("token"); // remove token
+      try {
+        localStorage.removeItem(config.STORAGE_KEYS.TOKEN); // remove token
+      } catch (e) {
+        // ignore localStorage errors
+      }
       return {
         ...state,
         currentUser: null,

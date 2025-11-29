@@ -1,7 +1,22 @@
 import axios from "axios";
+import config from "../config";
 
-axios.defaults.baseURL = "http://localhost:8000/api";
-axios.defaults.timeout = 5000;
+// Create a dedicated axios client so we don't rely on global defaults
+const client = axios.create({
+  baseURL: config.API_BASE_URL,
+  timeout: config.DEFAULT_TIMEOUT_MS
+});
+
+// Attach Authorization header automatically if token is present
+client.interceptors.request.use(cfg => {
+  try {
+    const token = localStorage.getItem(config.STORAGE_KEYS.TOKEN);
+    if (token) cfg.headers.Authorization = `Token ${token}`;
+  } catch (e) {
+    // don't break in environments without localStorage (SSR / tests)
+  }
+  return cfg;
+});
 
 const _getCSRFToken = () => {
   const cookies = document.cookie && document.cookie.split("; ");
@@ -15,162 +30,122 @@ const _getCSRFToken = () => {
 };
 
 const _getAuthToken = () => {
-  return localStorage.getItem("token");
+  try {
+    return localStorage.getItem(config.STORAGE_KEYS.TOKEN);
+  } catch (e) {
+    return null;
+  }
 };
 
 export const getCrises = () => {
-  return axios.get("/crises/");
+  return client.get("/crises/");
 };
 
 export const reportCrises = form => {
   if (form) form.append("csrfmiddlewaretoken", _getCSRFToken());
-  return axios.post("/crises/", form);
+  return client.post("/crises/", form);
 };
 
 export const userLogin = form => {
   if (form) form.append("csrfmiddlewaretoken", _getCSRFToken());
-  return axios.post("/rest-auth/login/", form); // it is important to keep the ending slash
+  return client.post("/rest-auth/login/", form); // it is important to keep the ending slash
 };
 
 export const userLogout = () => {
   const form = new FormData();
   form.append("csrfmiddlewaretoken", _getCSRFToken());
-  return axios.post("/rest-auth/logout/", form); // it is important to keep the ending slash
+  return client.post("/rest-auth/logout/", form); // it is important to keep the ending slash
 };
 
 export const getUserList = () => {
-  return axios.get("/users/", {
-    headers: {
-      Authorization: `Token ${_getAuthToken()}`
-    }
-  });
+  return client.get("/users/");
 };
 
 export const getCrisisType = () => {
-  return axios.get("/crisistype/");
+  return client.get("/crisistype/");
 };
 
 export const getAssistanceType = () => {
-  return axios.get("/crisisassistance/");
+  return client.get("/crisisassistance/");
 };
 
 export const dispatchCrisis = (id, phoneNumberToNotify) => {
-  return axios.put(
+  return client.put(
     "/crises/update-partial/" + id + "/",
     {
       crisis_status: "DP",
       phone_number_to_notify: phoneNumberToNotify
-    },
-    {
-      headers: {
-        Authorization: `Token ${_getAuthToken()}`
-      }
     }
   );
 };
 
 export const resolveCrisis = (id, undo) => {
-  return axios.put(
+  return client.put(
     "/crises/update-partial/" + id + "/",
     {
       crisis_status: undo ? "PD" : "RS"
-    },
-    {
-      headers: {
-        Authorization: `Token ${_getAuthToken()}`
-      }
     }
   );
 };
 
 export const addUser = form => {
-  return axios.post("/users/", form, {
-    headers: {
-      Authorization: `Token ${_getAuthToken()}`
-    }
-  });
+  return client.post("/users/", form);
 };
 
 export const editUser = (id, form) => {
-  return axios.put("/users/update-partial/" + id + "/", form, {
-    headers: {
-      Authorization: `Token ${_getAuthToken()}`
-    }
-  });
+  return client.put("/users/update-partial/" + id + "/", form);
 };
 
 export const addCrisisType = form => {
-  return axios.post("/crisistype/", form, {
-    headers: {
-      Authorization: `Token ${_getAuthToken()}`
-    }
-  });
+  return client.post("/crisistype/", form);
 };
 
 export const addAssistanceType = form => {
-  return axios.post("/crisisassistance/", form, {
-    headers: {
-      Authorization: `Token ${_getAuthToken()}`
-    }
-  });
+  return client.post("/crisisassistance/", form);
 };
 
 export const getEmergencyAgencies = () => {
-  return axios.get("/emergencyagencies/");
+  return client.get("/emergencyagencies/");
 };
 
 export const addEmergencyAgencies = form => {
-  return axios.post("/emergencyagencies/", form, {
-    headers: {
-      Authorization: `Token ${_getAuthToken()}`
-    }
-  });
+  return client.post("/emergencyagencies/", form);
 };
 
 export const editEmergencyAgencies = (id, form) => {
-  return axios.put("/emergencyagencies/update-partial/" + id + "/", form, {
-    headers: {
-      Authorization: `Token ${_getAuthToken()}`
-    }
-  });
+  return client.put("/emergencyagencies/update-partial/" + id + "/", form);
 };
 
 export const editSiteSettings = form => {
-  return axios.post("/sitesettings/", form, {
-    headers: {
-      Authorization: `Token ${_getAuthToken()}`
-    }
-  });
+  return client.post("/sitesettings/", form);
 };
 
 export const getCurrentUser = () => {
-  return axios.get("/rest-auth/user/", {
-    headers: {
-      Authorization: `Token ${_getAuthToken()}`
-    }
-  });
+  return client.get("/rest-auth/user/");
 };
 
 export const createWebSocket = () => {
-  return new WebSocket("ws://localhost:8000/api/ws/crises/");
+  return new WebSocket(config.WS_URL);
 };
+
+export { client };
 
 // from data.gov.sg
 export const getHumidity = () => {
-  return axios.get("https://api.data.gov.sg/v1/environment/relative-humidity");
+  return client.get("https://api.data.gov.sg/v1/environment/relative-humidity");
 };
 
 // from data.gov.sg
 export const getPSI = () => {
-  return axios.get("https://api.data.gov.sg/v1/environment/psi");
+  return client.get("https://api.data.gov.sg/v1/environment/psi");
 };
 
 // from data.gov.sg
 export const getRainfall = () => {
-  return axios.get("https://api.data.gov.sg/v1/environment/rainfall");
+  return client.get("https://api.data.gov.sg/v1/environment/rainfall");
 };
 
 // from data.gov.sg
 export const getTemperature = () => {
-  return axios.get("https://api.data.gov.sg/v1/environment/air-temperature");
+  return client.get("https://api.data.gov.sg/v1/environment/air-temperature");
 };
