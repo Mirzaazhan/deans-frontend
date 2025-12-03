@@ -43,42 +43,7 @@ class CrisisReportForm extends React.Component {
     e.preventDefault();
     this.props.form.validateFieldsAndScroll((err, values) => {
       if (!err) {
-        const {
-          name,
-          phone,
-          location_2,
-          crisisType,
-          crisisDescription,
-          assistanceType,
-          assistanceDescription
-        } = values;
-        const form = new FormData();
-        form.append("your_name", name);
-        form.append("mobile_number", phone);
-        if (crisisType && crisisType.length > 0) {
-          for (const type of crisisType) {
-            form.append("crisis_type", type);
-          }
-        }
-        if (assistanceType && assistanceType.length > 0) {
-          for (const type of assistanceType) {
-            form.append("crisis_assistance", type);
-          }
-        }
-        form.append("crisis_status", "PD");
-        form.append("crisis_location1", JSON.stringify(this.state.address)); // important because object makes no sense in REST
-        form.append(
-          "crisis_location2",
-          typeof location_2 === "undefined" ? "" : location_2
-        );
-        form.append(
-          "crisis_description",
-          typeof crisisDescription === "undefined" ? "" : crisisDescription
-        );
-        form.append(
-          "crisis_assistance_description",
-          typeof assistanceDescription === "undefined" ? "" : crisisDescription
-        );
+        const form = this.createFormData(values, this.state.address);
         this.props
           .reportCrises(form)
           .then(() => {
@@ -86,9 +51,48 @@ class CrisisReportForm extends React.Component {
             this.props.getCrises();
             this.props.hideModal();
           })
-          .catch(error => console.log(error));
+          .catch(error => {
+            message.error("An error occurred. Please try again.");
+            console.error("Error reporting crisis:", error);
+          });
       }
     });
+  };
+
+  createFormData = (values, address) => {
+    const {
+      name,
+      phone,
+      location_2,
+      crisisType,
+      crisisDescription,
+      assistanceType,
+      assistanceDescription
+    } = values;
+    const form = new FormData();
+    form.append("your_name", name);
+    form.append("mobile_number", phone);
+    form.append("crisis_location1", JSON.stringify(address));
+    form.append("crisis_status", "PD");
+
+    if (location_2) {
+      form.append("crisis_location2", location_2);
+    }
+    if (crisisDescription) {
+      form.append("crisis_description", crisisDescription);
+    }
+    if (assistanceDescription) {
+      form.append("crisis_assistance_description", assistanceDescription);
+    }
+
+    if (crisisType && crisisType.length > 0) {
+      crisisType.forEach(type => form.append("crisis_type", type));
+    }
+    if (assistanceType && assistanceType.length > 0) {
+      assistanceType.forEach(type => form.append("crisis_assistance", type));
+    }
+
+    return form;
   };
 
   handleConfirmBlur = e => {
@@ -270,12 +274,21 @@ class CrisisReportForm extends React.Component {
   }
 }
 
+/**
+ * @property {array} crisisType - list of crisis types.
+ * @property {array} assistanceType - list of assistance types.
+ * @property {func} reportCrises - redux action to report crisis.
+ * @property {func} getCrises - redux action to get all crises.
+ * @property {func} hideModal - redux action to hide modal.
+ * @property {object} form - antd form object.
+ */
 CrisisReportForm.propTypes = {
   crisisType: PropTypes.array.isRequired,
   assistanceType: PropTypes.array.isRequired,
   reportCrises: PropTypes.func.isRequired,
   getCrises: PropTypes.func.isRequired,
-  hideModal: PropTypes.func.isRequired
+  hideModal: PropTypes.func.isRequired,
+  form: PropTypes.object.isRequired
 };
 
 export default Form.create()(CrisisReportForm);
