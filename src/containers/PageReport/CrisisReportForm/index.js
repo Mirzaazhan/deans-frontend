@@ -1,6 +1,6 @@
 import React from "react";
 import PropTypes from "prop-types";
-import { Form, Input, Tooltip, Icon, Select, Button } from "antd";
+import { Form, Input, Tooltip, Icon, Select, Button, message } from "antd";
 import PlacesAutocomplete, {
   geocodeByAddress,
   getLatLng
@@ -20,10 +20,13 @@ class CrisisReportForm extends React.Component {
   state = {
     confirmDirty: false,
     address: "",
-    gps: null
+    gps: null,
+    locationError: null
   };
 
-  handleChange = () => null; // dummy
+  handleChange = address => {
+    this.setState({ address, locationError: null });
+  };
 
   handleSelect = address => {
     geocodeByAddress(address)
@@ -31,63 +34,67 @@ class CrisisReportForm extends React.Component {
         return getLatLng(results[0]);
       })
       .then(gps => {
-        this.setState({ gps, address });
-        this.props.form.setFieldsValue({
-          location: address
-        });
+        this.setState({ gps, address, locationError: null });
       })
       .catch(error => console.error("Error", error));
   };
 
   handleSubmit = e => {
     e.preventDefault();
-    e.disabled = true;
     this.props.form.validateFieldsAndScroll((err, values) => {
+      if (!this.state.address) {
+        this.setState({ locationError: "Please input the location!" });
+        return;
+      }
       if (!err) {
-        const {
-          name,
-          phone,
-          location_2,
-          crisisType,
-          crisisDescription,
-          assistanceType,
-          assistanceDescription
-        } = values;
-        const form = new FormData();
-        form.append("your_name", name);
-        form.append("mobile_number", phone);
-        if (crisisType && crisisType.length > 0) {
-          for (const type of crisisType) {
-            form.append("crisis_type", type);
-          }
-        }
-        if (assistanceType && assistanceType.length > 0) {
-          for (const type of assistanceType) {
-            form.append("crisis_assistance", type);
-          }
-        }
-        form.append("crisis_status", "PD");
-        form.append("crisis_location1", JSON.stringify(this.state.address)); // important because object makes no sense in REST
-        form.append(
-          "crisis_location2",
-          typeof location_2 === "undefined" ? "" : location_2
-        );
-        form.append(
-          "crisis_description",
-          typeof crisisDescription === "undefined" ? "" : crisisDescription
-        );
-        form.append(
-          "crisis_assistance_description",
-          typeof assistanceDescription === "undefined" ? "" : crisisDescription
-        );
+        const form = this.createFormData(values, this.state.address);
         this.props
           .reportCrises(form)
           .then(() => {
             this.props.setComplete();
           })
-          .catch(error => console.log(error));
+          .catch(error => {
+            message.error("An error occurred while reporting the crisis.");
+            console.error(error);
+          });
       }
     });
+  };
+
+  createFormData = (values, address) => {
+    const {
+      name,
+      phone,
+      location_2,
+      crisisType,
+      crisisDescription,
+      assistanceType,
+      assistanceDescription
+    } = values;
+    const form = new FormData();
+    form.append("your_name", name);
+    form.append("mobile_number", phone);
+    form.append("crisis_location1", JSON.stringify(address));
+    form.append("crisis_status", "PD");
+
+    if (location_2) {
+      form.append("crisis_location2", location_2);
+    }
+    if (crisisDescription) {
+      form.append("crisis_description", crisisDescription);
+    }
+    if (assistanceDescription) {
+      form.append("crisis_assistance_description", assistanceDescription);
+    }
+
+    if (crisisType && crisisType.length > 0) {
+      crisisType.forEach(type => form.append("crisis_type", type));
+    }
+    if (assistanceType && assistanceType.length > 0) {
+      assistanceType.forEach(type => form.append("crisis_assistance", type));
+    }
+
+    return form;
   };
 
   handleConfirmBlur = e => {
@@ -144,61 +151,57 @@ class CrisisReportForm extends React.Component {
             ]
           })(<Input addonBefore={prefixSelector} style={{ width: "100%" }} />)}
         </FormItem>
-        <FormItem {...formItemLayout} label={<span>Location</span>}>
-          {getFieldDecorator("location", {
-            rules: [
-              {
-                required: true,
-                message: "Please input the location!",
-                whitespace: true
-              }
-            ]
-          })(
-            <PlacesAutocomplete
-              onChange={this.handleChange}
-              onSelect={this.handleSelect}
-            >
-              {({
-                getInputProps,
-                suggestions,
-                getSuggestionItemProps,
-                loading
-              }) => {
-                return (
-                  <React.Fragment>
-                    <Input
-                      {...getInputProps({
-                        placeholder: "Search places..."
-                      })}
-                    />
-                    <div className="autocomplete-dropdown-container">
-                      {loading && <div>Loading...</div>}
-                      {suggestions.map((suggestion, index) => {
-                        const className = suggestion.active
-                          ? "suggestion-item--active"
-                          : "suggestion-item";
-                        // inline style for demonstration purpose
-                        const style = suggestion.active
-                          ? { backgroundColor: "#fafafa", cursor: "pointer" }
-                          : { backgroundColor: "#ffffff", cursor: "pointer" };
-                        return (
-                          <div
-                            key={index}
-                            {...getSuggestionItemProps(suggestion, {
-                              className,
-                              style
-                            })}
-                          >
-                            <span>{suggestion.description}</span>
-                          </div>
-                        );
-                      })}
-                    </div>
-                  </React.Fragment>
-                );
-              }}
-            </PlacesAutocomplete>
-          )}
+        <FormItem
+          {...formItemLayout}
+          label={<span>Location</span>}
+          validateStatus={this.state.locationError ? "error" : ""}
+          help={this.state.locationError || ""}
+        >
+          <PlacesAutocomplete
+            value={this.state.address}
+            onChange={this.handleChange}
+            onSelect={this.handleSelect}
+          >
+            {({
+              getInputProps,
+              suggestions,
+              getSuggestionItemProps,
+              loading
+            }) => {
+              return (
+                <React.Fragment>
+                  <Input
+                    {...getInputProps({
+                      placeholder: "Search places..."
+                    })}
+                  />
+                  <div className="autocomplete-dropdown-container">
+                    {loading && <div>Loading...</div>}
+                    {suggestions.map((suggestion, index) => {
+                      const className = suggestion.active
+                        ? "suggestion-item--active"
+                        : "suggestion-item";
+                      // inline style for demonstration purpose
+                      const style = suggestion.active
+                        ? { backgroundColor: "#fafafa", cursor: "pointer" }
+                        : { backgroundColor: "#ffffff", cursor: "pointer" };
+                      return (
+                        <div
+                          key={index}
+                          {...getSuggestionItemProps(suggestion, {
+                            className,
+                            style
+                          })}
+                        >
+                          <span>{suggestion.description}</span>
+                        </div>
+                      );
+                    })}
+                  </div>
+                </React.Fragment>
+              );
+            }}
+          </PlacesAutocomplete>
         </FormItem>
         <FormItem {...formItemLayout} label={<span>Location 2</span>}>
           {getFieldDecorator("location_2", {
@@ -274,11 +277,16 @@ class CrisisReportForm extends React.Component {
 }
 
 CrisisReportForm.propTypes = {
-  crisisType: PropTypes.array.isRequired,
-  assistanceType: PropTypes.array.isRequired,
-  flag: PropTypes.bool.isRequired,
+  crisisType: PropTypes.object.isRequired,
+  assistanceType: PropTypes.object.isRequired,
+  flag: PropTypes.bool,
   reportCrises: PropTypes.func.isRequired,
-  setComplete: PropTypes.func.isRequired
+  setComplete: PropTypes.func.isRequired,
+  form: PropTypes.object.isRequired
+};
+
+CrisisReportForm.defaultProps = {
+  flag: false
 };
 
 export default Form.create()(CrisisReportForm);

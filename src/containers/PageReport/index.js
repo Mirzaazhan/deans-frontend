@@ -45,8 +45,8 @@ class PageReport extends React.Component {
               </div>
               <div className={styles.form}>
                 <CrisisReportForm
-                  crisisType={this.props.crisisType || []}
-                  assistanceType={this.props.assistanceType || []}
+                  crisisType={this.props.crisisType || {}}
+                  assistanceType={this.props.assistanceType || {}}
                   reportCrises={this.props.reportCrises}
                   setComplete={this.setComplete}
                   flag={this.props.flag}
@@ -62,13 +62,20 @@ class PageReport extends React.Component {
 }
 
 PageReport.propTypes = {
-  crisisType: PropTypes.array.isRequired,
-  assistanceType: PropTypes.array.isRequired,
-  crises: PropTypes.array.isRequired,
+  crisisType: PropTypes.object,
+  assistanceType: PropTypes.object,
+  crises: PropTypes.array,
   fetchTypes: PropTypes.func.isRequired,
   getCrises: PropTypes.func.isRequired,
   reportCrises: PropTypes.func.isRequired,
-  flag: PropTypes.bool.isRequired
+  flag: PropTypes.bool
+};
+
+PageReport.defaultProps = {
+  crisisType: {},
+  assistanceType: {},
+  crises: [],
+  flag: false
 };
 
 const mapStateToProps = state => {
