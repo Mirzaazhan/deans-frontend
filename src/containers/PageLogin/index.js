@@ -4,6 +4,7 @@ import { userLogin } from "@redux/actions";
 import PropTypes from "prop-types";
 import { Redirect } from "react-router-dom";
 import LoginForm from "./LoginForm";
+import * as ROUTES from "src/routes";
 import NavBar from "@components/NavBar";
 import Footer from "@components/Footer";
 import * as styles from "./style.scss";
@@ -19,7 +20,7 @@ class PageLogin extends React.Component {
   };
 
   render() {
-    if (this.state.redirect) return <Redirect to="/staff/dashboard" />;
+    if (this.state.redirect) return <Redirect to={ROUTES.ROUTE_DASHBOARD} />;
     return (
       <React.Fragment>
         <NavBar />

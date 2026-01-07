@@ -5,6 +5,7 @@ import { connect } from "react-redux";
 import { getCurrentUser, userLogout } from "@redux/actions";
 import { Link } from "react-router-dom";
 import logo from "@assets/logo.png";
+import * as ROUTES from "src/routes";
 
 import * as styles from "./style.scss";
 
@@ -19,18 +20,18 @@ class NavBar extends React.Component {
       <div className={styles.container}>
         <div className={styles.left}>
           <div className={styles.item}>
-            <Link to="/">
+            <Link to={ROUTES.ROUTE_HOME}>
               <img src={logo} className={styles.logo} />
             </Link>
           </div>
-          <div className={styles.item + " " + styles.brand}>
-            <Link to="/">Dean&#39;s Crisis Management System</Link>
+            <div className={styles.item + " " + styles.brand}>
+            <Link to={ROUTES.ROUTE_HOME}>Dean&#39;s Crisis Management System</Link>
           </div>
-          <div className={styles.item}>
-            <Link to="/">Home</Link>
+            <div className={styles.item}>
+            <Link to={ROUTES.ROUTE_HOME}>Home</Link>
           </div>
-          <div className={styles.item}>
-            <Link to="/report">Report</Link>
+            <div className={styles.item}>
+            <Link to={ROUTES.ROUTE_REPORT}>Report</Link>
           </div>
         </div>
         <div className={styles.right}>
@@ -41,9 +42,9 @@ class NavBar extends React.Component {
                 content={
                   <Button
                     onClick={() => {
-                      this.props.userLogout().then(() => {
+                        this.props.userLogout().then(() => {
                         message.success("You are logged out");
-                        location.assign("/");
+                        location.assign(ROUTES.ROUTE_HOME);
                       });
                     }}
                   >
@@ -51,10 +52,10 @@ class NavBar extends React.Component {
                   </Button>
                 }
               >
-                <Link to="/staff/dashboard">{currentUser}</Link>
+                <Link to={ROUTES.ROUTE_DASHBOARD}>{currentUser}</Link>
               </Popover>
             ) : (
-              <Link to="/login">Login</Link>
+              <Link to={ROUTES.ROUTE_LOGIN}>Login</Link>
             )}
           </div>
         </div>

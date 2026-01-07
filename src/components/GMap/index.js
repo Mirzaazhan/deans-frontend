@@ -3,6 +3,7 @@ import { connect } from "react-redux";
 import Marker from "@components/Marker";
 import PropTypes from "prop-types";
 import GoogleMapReact from "google-map-react";
+import config from "../../config";
 import { geocodeByAddress, getLatLng } from "react-places-autocomplete";
 
 class GMap extends Component {
@@ -76,7 +77,7 @@ class GMap extends Component {
       <div style={{ height: "100%", width: "100%" }}>
         <GoogleMapReact
           bootstrapURLKeys={{
-            key: "AIzaSyA4Z60Vt8Bq84x2X32NQ286a_2_hADWzqI"
+            key: config.GOOGLE_MAPS_KEY
           }}
           defaultCenter={{ lat: 1.3354, lng: 103.8277 }}
           defaultZoom={12}

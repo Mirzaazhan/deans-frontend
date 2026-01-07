@@ -14,18 +14,15 @@ class LoginForm extends React.Component {
         const form = new FormData();
         form.append("username", username);
         form.append("password", password);
-        this.props
-          .userLogin(form)
+        this.props.userLogin(form)
           .then(() => {
-            if (this.props.flag) {
-              message.success("Login successful!", 2);
-              this.props.setRedirect();
-            } else {
-              message.error("Login failed, please try again.", 2);
-            }
+            // On success, redirect immediately
+            message.success("Login successful!", 2);
+            this.props.setRedirect();
           })
           .catch(() => {
-            /* do nothing */
+            // On error, show a message to the user
+            message.error("Login failed, please check credentials and try again.", 3);
           });
       }
     });
